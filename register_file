@@ -1,0 +1,43 @@
+//Date: 06/03/2019
+//Name: TrongTran
+//CPU 32 bit design
+
+module register_file (clk, Add_R_A, Add_R_B, Add_W_D, Data_R_A, Data_R_B, Data_W_D, RegWEn);
+
+   parameter ADDR_WIDTH = 5;
+   parameter DATA_WIDTH = 32;
+
+   input  clk;
+   input  RegWEn;
+   input  [ADDR_WIDTH-1:0] Add_R_A;
+   input  [ADDR_WIDTH-1:0] Add_R_B;
+   input  [ADDR_WIDTH-1:0] Add_W_D;
+   input  [DATA_WIDTH-1:0] Data_W_D;
+
+   output [DATA_WIDTH-1:0] Data_R_A;
+   output [DATA_WIDTH-1:0] Data_R_B;
+
+   wire   [DATA_WIDTH-1:0] Data_R_A;
+   wire   [DATA_WIDTH-1:0] Data_R_B;
+
+   reg    [DATA_WIDTH-1:0] registers[0:DATA_WIDTH-2];
+   integer i;
+
+   initial begin
+      for (i = 0; i < 31; i = i + 1) registers[i] <= 0;
+   end
+
+
+   assign Data_R_A = registers[Add_R_A];
+   assign Data_R_B = registers[Add_R_B];
+
+
+
+   always @(posedge clk) begin
+      if (RegWEn) begin
+         registers[Add_W_D] <= Data_W_D;
+         registers[0] <= 0;
+      end
+   end
+
+endmodule
