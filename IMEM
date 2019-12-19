@@ -1,0 +1,58 @@
+//Author: TrongTran
+//Date: 2019
+
+/******** Instruction Memmory Block ********/
+module IMEM(inst,PC);
+parameter       INST_WIDTH_LENGTH = 32;
+parameter       PC_WIDTH_LENGTH = 32;
+parameter       MEM_WIDTH_LENGTH = 32;
+parameter       MEM_DEPTH = 1<<18;
+output  reg     [INST_WIDTH_LENGTH-1:0]inst;
+input           [PC_WIDTH_LENGTH-1:0]PC;
+
+/********* Instruction Memmory *************/
+reg             [MEM_WIDTH_LENGTH-1:0]IMEM[0:MEM_DEPTH-1];
+
+wire            [17:0]pWord;
+wire            [1:0]pByte;
+
+assign          pWord = PC[19:2];
+assign          pByte = PC[1:0];
+
+initial begin
+//$readmemh("factorial.txt",IMEM);
+IMEM[0]  = 32'h00000093;
+IMEM[1]  = 32'h00300113;
+//IMEM[2]  = 32'h00116463;
+IMEM[2]  = 32'h00e12423;
+IMEM[3]  = 32'h602081b3;
+
+
+//        IMEM[0]  = 32'h00802503;
+//        IMEM[1]  = 32'h00100593;
+//        IMEM[2]  = 32'h00100613;
+//        IMEM[3]  = 32'h00b50e63;
+//        IMEM[4]  = 32'h00158593;
+//        IMEM[5]  = 32'h00058313;
+//        IMEM[6]  = 32'h00060393;
+//        IMEM[7]  = 32'h014000ef;
+//        IMEM[8]  = 32'h00500633;
+//        IMEM[9]  = 32'hfea596e3;
+//        IMEM[10] = 32'h00c02623;
+//        IMEM[11] = 32'h0180006f;
+//        IMEM[12] = 32'h0002f293;
+//        IMEM[13] = 32'h007282b3;
+//        IMEM[14] = 32'hfff30313;
+//        IMEM[15] = 32'hfe031ce3;
+//        IMEM[16] = 32'h00008067;
+//        IMEM[17] = 32'h00000033;
+end
+
+always@(*)
+begin
+        if (pByte == 2'b00)
+                inst <= IMEM[pWord];
+        else
+                inst <= 'hz;
+end
+endmodule
