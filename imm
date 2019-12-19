@@ -1,0 +1,20 @@
+//Author: TrongTran
+//Date: 2019
+
+
+module imm (Imm_in, Imm_out, ImmSel);
+
+
+input  [24:0] Imm_in;
+input  [2:0]  ImmSel;
+output [31:0] Imm_out;
+wire   [31:0] Imm_out;
+
+assign Imm_out = (ImmSel==3'b000)? {{21{Imm_in[24]}},Imm_in[23:13]}:
+                 (ImmSel==3'b001)? {{21{Imm_in[24]}},Imm_in[23:18], Imm_in[4:0]}:
+                 (ImmSel==3'b010)? {{20{Imm_in[24]}}, Imm_in[0], Imm_in[23:18],Imm_in[4:1], 1'b0} :
+                 (ImmSel==3'b011)? {Imm_in[24:5], {12{1'b0}}} :
+                 (ImmSel==3'b100)? {{21{Imm_in[24]}},Imm_in[23:13]} :
+                 (ImmSel==3'b101)? {{13{Imm_in[24]}}, Imm_in[12:5], Imm_in[13], Imm_in[23:14],1'b0} : 32'h0000_0000;
+
+endmodule
