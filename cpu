@@ -1,0 +1,143 @@
+//Author: TrongTran
+//Date: 2019
+
+`timescale 1ns/1ns
+`include "./register_file.v"
+`include "./alu.v"
+`include "./pc.v"
+`include "./IMEM.v"
+`include "./br_comp.v"
+`include "./DMEM.v"
+`include "./imm.v"
+`include "./control.v"
+`include "./solve_store.v"
+`include "./solve_load.v"
+
+
+module cpu (clk, rst_n);
+parameter PC_WIDTH = 32;
+parameter DATA_WIDTH = 32;
+parameter ADDR_WIDTH = 5;
+
+input clk;
+input rst_n;
+
+wire [PC_WIDTH-1:0] pc_in;
+wire [PC_WIDTH-1:0] pc_out;
+wire [PC_WIDTH-1:0] pc_out_add_4;
+wire [PC_WIDTH-1:0] imem_out;
+wire PCSel;
+wire RegWEn;
+wire BrUn;
+wire BrEq;
+wire BrLt;
+wire ASel;
+wire BSel;
+wire [3:0] ALUSel;
+wire MemRW;
+wire [1:0] WBSel;
+wire [2:0] ImmSel;
+wire [1:0] DataIn;
+wire [2:0] Dataoutaddi;
+wire [DATA_WIDTH-1:0] dmem_out;
+wire [DATA_WIDTH-1:0] dmem_out_solve;
+wire [DATA_WIDTH-1:0] ALUOut;
+wire [DATA_WIDTH-1:0] alu_in_1;
+wire [DATA_WIDTH-1:0] alu_in_2;
+wire [DATA_WIDTH-1:0] Data_R_A;
+wire [DATA_WIDTH-1:0] Data_R_B;
+wire [DATA_WIDTH-1:0] Data_R_B_solve;
+wire [DATA_WIDTH-1:0] Data_W_D;
+wire [DATA_WIDTH-1:0] imm_out;
+
+
+pc pc_00 (.clk(clk), .rst_n(rst_n), .PC_IN(pc_in), .PC_OUT(pc_out));
+
+
+pc_add_4 pc_add_4_00 (.in(pc_out), .out(pc_out_add_4));
+
+
+mux2to1 mux2to1_00 (.Reg_1(pc_out_add_4), .Reg_2(ALUOut), .Sel(PCSel), .Mux_out(pc_in));
+
+
+IMEM IMEM_00 (.PC(pc_out), .inst(imem_out));
+
+
+register_file register_file_00 (.clk(clk), .Add_R_A(imem_out[19:15]), .Add_R_B(imem_out[24:20]),
+.Add_W_D(imem_out[11:7]), .Data_R_A(Data_R_A), .Data_R_B(Data_R_B), .Data_W_D(Data_W_D), .RegWEn(RegWEn));
+
+
+imm imm_00 (.Imm_in(imem_out[31:7]), .Imm_out(imm_out), .ImmSel(ImmSel));
+
+
+br_comp br_comp_00 (.br_in_1(Data_R_A), .br_in_2(Data_R_B), .BrUn(BrUn), .BrEq(BrEq), .BrLt(BrLt));
+
+
+mux2to1 mux2to1_01 (.Reg_1(Data_R_A), .Reg_2(pc_out), .Sel(ASel), .Mux_out(alu_in_1));
+
+
+mux2to1 mux2to1_02 (.Reg_1(Data_R_B), .Reg_2(imm_out), .Sel(BSel), .Mux_out(alu_in_2));
+
+
+alu alu_0 (.ALUSel(ALUSel), .ALUOut(ALUOut), .Reg_1(alu_in_1), .Reg_2(alu_in_2));
+
+
+DMEM DMEM_00 (.clk(clk), .rst_n(rst_n), .MemRW(MemRW), .Addr(ALUOut), .DataR(dmem_out), .DataW(Data_R_B_solve));
+
+
+mux3to1 mux3to1_00  (.Reg_1(dmem_out_solve), .Reg_2(ALUOut), .Reg_3(pc_out_add_4), .Sel(WBSel), .Mux_out(Data_W_D));
+
+
+control control_00 (.data({PCSel, ImmSel, RegWEn, BrUn, BSel, ASel, ALUSel, MemRW, DataIn, Dataoutaddi, WBSel}),
+ .addr({BrEq, BrLt, imem_out[31:0]}));
+
+
+solve_store solve_store_00 (.in_load(Data_R_B), .control_sig(DataIn), .out_load(Data_R_B_solve));
+
+solve_load solve_load_00 (.in_load(dmem_out), .control_sig(Dataoutaddi), .out_load(dmem_out_solve));
+
+endmodule
+
+
+
+module mux2to1 (Reg_1, Reg_2, Sel, Mux_out);
+
+   parameter DATA_WIDTH = 32;
+
+   input  [DATA_WIDTH-1:0] Reg_1;
+   input  [DATA_WIDTH-1:0] Reg_2;
+   input                   Sel;
+   output [DATA_WIDTH-1:0] Mux_out;
+
+   assign Mux_out = (Sel==0)? Reg_1: Reg_2;
+
+endmodule
+
+
+module mux3to1 (Reg_1, Reg_2, Reg_3, Sel, Mux_out);
+
+   parameter DATA_WIDTH = 32;
+   parameter SEL_WIDTH  = 2;
+
+   input  [DATA_WIDTH-1:0] Reg_1;
+   input  [DATA_WIDTH-1:0] Reg_2;
+   input  [DATA_WIDTH-1:0] Reg_3;
+   input  [SEL_WIDTH-1:0]  Sel;
+   output [DATA_WIDTH-1:0] Mux_out;
+
+   assign Mux_out = (Sel==2'b00)? Reg_1:
+                    (Sel==2'b01)? Reg_2:
+                    (Sel==2'b10)? Reg_3:32'h0000_0000;
+endmodule
+
+
+module pc_add_4 (in, out);
+
+   parameter PC_WIDTH = 32;
+   input     [PC_WIDTH-1:0] in;
+   output    [PC_WIDTH-1:0] out;
+   wire      [PC_WIDTH-1:0] out;
+
+   assign out = in + 32'h0000_0004;
+
+endmodule
